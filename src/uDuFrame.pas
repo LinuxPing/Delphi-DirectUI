@@ -2,12 +2,12 @@ unit uDuFrame;
 
 interface
 
-uses Classes, Controls, Windows, Messages, uDuMemoryDC, ExtCtrls;
+uses Classes, Controls, Windows, Messages, uDuCompatiblerDC, ExtCtrls;
 
 type
 TDuFrame=class(TWinControl)
 private
-  m_MemoryDC: TDuMemoryDC;
+  m_MemoryDC: TDuCompatiblerDC;
   m_ptMouseLast, m_ptMousePos : TPoint;
   m_nMouseKey: Integer;
 
@@ -51,7 +51,7 @@ end;
 
 implementation
 
-uses uDuControl;
+uses uDuControl, Forms;
 
 { TDuMainWindow }
 
@@ -116,18 +116,45 @@ begin
 end;
 
 procedure TDuFrame.WMKeyDown(var Message: TWMKeyDown);
+var
+  I : Integer;
 begin
   inherited;
+  for I := 0 to ComponentCount - 1 do
+  begin
+    if Components[I] is TDuControl then
+      if TDuControl(Components[I]).OnKeyDown(Message.CharCode, KeyDataToShiftState(Message.KeyData)) then
+        Break;
+  end;
 end;
 
 procedure TDuFrame.WMKeyUp(var Message: TWMKeyUp);
+var
+  I : Integer;
 begin
   inherited;
+  for I := 0 to ComponentCount - 1 do
+  begin
+    if Components[I] is TDuControl then
+      if TDuControl(Components[I]).OnKeyUp(Message.CharCode, KeyDataToShiftState(Message.KeyData)) then
+        Break;
+  end;
 end;
 
 procedure TDuFrame.WMLButtonDblClk(var Message: TWMLButtonDblClk);
+var
+  I : Integer;
+  LCurPos : TPoint;
 begin
   inherited;
+  LCurPos.X := Message.XPos;
+  LCurPos.Y := Message.YPos;
+  for I := 0 to ComponentCount - 1 do
+  begin
+    if Components[I] is TDuControl then
+      if TDuControl(Components[I]).OnLButtonDown(Message.Keys, LCurPos) then
+        Break;
+  end;
 end;
 
 procedure TDuFrame.WMLButtonDown(var Message: TWMLButtonDown);
@@ -194,7 +221,7 @@ begin
   try
     //创建内存DC
     if not Assigned(m_MemoryDC) then
-      m_MemoryDC := TDuMemoryDC.Create(LPs.hdc);
+      m_MemoryDC := TDuCompatiblerDC.Create(LPs.hdc);
     //设置内存DC区域
     m_MemoryDC.SetBounds(LPs.hdc, GetClientRect);
 

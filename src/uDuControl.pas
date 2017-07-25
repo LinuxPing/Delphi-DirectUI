@@ -58,9 +58,9 @@ public
     //当鼠标滚轮时触发的事件--有焦点才响应
     function OnMouseWheel(AIsDown: Boolean): Boolean; virtual;
     //当键按下时触发的事件--有焦点才响应
-    function OnKeyDown(ACharCode: Word; AKeyData: LongInt): Boolean; virtual;
+    function OnKeyDown(ACharCode: Word; Shift: TShiftState): Boolean; virtual;
     //当键抬起时触发的事件--有焦点才响应
-    function OnKeyUp(ACharCode: Word; AKeyData: LongInt): Boolean; virtual;
+    function OnKeyUp(ACharCode: Word; Shift: TShiftState): Boolean; virtual;
 
     property Visible:Boolean read FVisible write SetVisible;
     property Bounds: TRect read GetBounds;
@@ -108,12 +108,12 @@ procedure TDuControl.OnInnerShow;
 begin
 end;
 
-function TDuControl.OnKeyDown(ACharCode: Word; AKeyData: Integer): Boolean;
+function TDuControl.OnKeyDown(ACharCode: Word; Shift: TShiftState): Boolean;
 begin
   Result := False;
 end;
 
-function TDuControl.OnKeyUp(ACharCode: Word; AKeyData: Integer): Boolean;
+function TDuControl.OnKeyUp(ACharCode: Word; Shift: TShiftState): Boolean;
 begin
   Result := False;
 end;
