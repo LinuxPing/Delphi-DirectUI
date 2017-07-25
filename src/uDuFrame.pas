@@ -2,13 +2,17 @@ unit uDuFrame;
 
 interface
 
-uses Classes, Controls, Windows, Messages, uDuMemoryDC;
+uses Classes, Controls, Windows, Messages, uDuMemoryDC, ExtCtrls;
 
 type
 TDuFrame=class(TWinControl)
 private
-   m_MemoryDC: TDuMemoryDC;
+  m_MemoryDC: TDuMemoryDC;
+  m_ptMouseLast, m_ptMousePos : TPoint;
+  m_nMouseKey: Integer;
 
+  m_timerMouse: TTimer;
+  procedure OnMouseMoveTimer(Sender: TObject);
   //响应可视状态改变消息
   procedure CMVisibleChanged(var Message: TMessage); message CM_VISIBLECHANGED;
   //响应大小改变消息
@@ -53,18 +57,52 @@ uses uDuControl;
 
 procedure TDuFrame.CMVisibleChanged(var Message: TMessage);
 begin
-
+  inherited;
 end;
 
 constructor TDuFrame.Create(AOwner: TComponent);
 begin
   inherited;
+  //初始化MouseMove响应频率控制器
+  m_timerMouse := TTimer.Create(Self);
+  m_timerMouse.Enabled := False;
+  m_timerMouse.Interval := 20;
+  m_timerMouse.OnTimer := OnMouseMoveTimer;
 end;
 
 destructor TDuFrame.Destroy;
 begin
-
+  if Assigned(m_MemoryDC) then m_MemoryDC.Free;
+  m_timerMouse.Free;
   inherited;
+end;
+
+procedure TDuFrame.OnMouseMoveTimer(Sender: TObject);
+var
+  LCurPos: TPoint;
+  I : Integer;
+begin
+  m_timerMouse.Enabled := False;
+  //响应MouseMove
+  if (Abs(m_ptMouseLast.X - m_ptMousePos.X) > 2) or (Abs(m_ptMouseLast.Y - m_ptMousePos.Y) > 2) then
+  begin
+    //记录当前鼠标位置
+    m_ptMouseLast := m_ptMousePos;
+    //鼠标移动了，单击状态取消
+    //m_bLButtonClick := False;
+  end
+  else    //如果移动范围过小，则不响应，防止鼠标抖动
+    Exit;
+
+    //当前鼠标位置
+  LCurPos := m_ptMousePos;
+
+  for I := 0 to ComponentCount - 1 do
+  begin
+    if Components[I] is TDuControl then
+      if TDuControl(Components[I]).OnMouseMove(m_nMouseKey, LCurPos) then
+        Break;
+  end;
 end;
 
 procedure TDuFrame.WMEraseBkgnd(var Message: TWmEraseBkgnd);
@@ -79,44 +117,77 @@ end;
 
 procedure TDuFrame.WMKeyDown(var Message: TWMKeyDown);
 begin
-
+  inherited;
 end;
 
 procedure TDuFrame.WMKeyUp(var Message: TWMKeyUp);
 begin
-
+  inherited;
 end;
 
 procedure TDuFrame.WMLButtonDblClk(var Message: TWMLButtonDblClk);
 begin
-
+  inherited;
 end;
 
 procedure TDuFrame.WMLButtonDown(var Message: TWMLButtonDown);
+var
+  I : Integer;
+  LCurPos : TPoint;
 begin
+  inherited;
+  if Self.CanFocus and not Self.Focused  then
+    Self.SetFocus;
 
+  LCurPos.X := Message.XPos;
+  LCurPos.Y := Message.YPos;
+
+  for I := 0 to ComponentCount - 1 do
+  begin
+    if Components[I] is TDuControl then
+      if TDuControl(Components[I]).OnLButtonDown(Message.Keys, LCurPos) then
+        Break;
+  end;
 end;
 
 procedure TDuFrame.WMLButtonUp(var Message: TWMLButtonUp);
+var
+  I : Integer;
+  LCurPos : TPoint;
 begin
+  inherited;
+  if Self.CanFocus and not Self.Focused  then
+    Self.SetFocus;
 
+  LCurPos.X := Message.XPos;
+  LCurPos.Y := Message.YPos;
+
+  for I := 0 to ComponentCount - 1 do
+  begin
+    if Components[I] is TDuControl then
+      if TDuControl(Components[I]).OnLButtonUp(Message.Keys, LCurPos) then
+        Break;
+  end;
 end;
 
 procedure TDuFrame.WMMouseMove(var Message: TWMMouseMove);
 begin
-
+  inherited;
+  m_ptMousePos.X := Message.XPos;
+  m_ptMousePos.Y := Message.YPos;
+  m_nMouseKey := Message.Keys;
+  m_timerMouse.Enabled := True;
 end;
 
 procedure TDuFrame.WMMouseWheel(var Message: TWMMouseWheel);
 begin
-
+  inherited;
 end;
 
 procedure TDuFrame.WMPaint(var Message: TWMPaint);
 var
   LControl: TDuControl;
   I: Integer;
-  LCompatibleDC: HDC;
   LPs: PAINTSTRUCT;
 begin
   BeginPaint(Handle, LPs);
@@ -127,7 +198,7 @@ begin
     //设置内存DC区域
     m_MemoryDC.SetBounds(LPs.hdc, GetClientRect);
 
-    //循环绘制浮动组件
+    //循环绘制子组件
     for I := 0 to Self.ComponentCount - 1 do
     begin
       if not(Self.Components[I] is TDuControl) then Continue;
@@ -147,18 +218,55 @@ begin
 end;
 
 procedure TDuFrame.WMRButtonDown(var Message: TWMRButtonDown);
+var
+  I : Integer;
+  LCurPos : TPoint;
 begin
+  inherited;
+  if Self.CanFocus and not Self.Focused  then
+    Self.SetFocus;
 
+  LCurPos.X := Message.XPos;
+  LCurPos.Y := Message.YPos;
+
+  for I := 0 to ComponentCount - 1 do
+  begin
+    if Components[I] is TDuControl then
+      if TDuControl(Components[I]).OnRButtonDown(Message.Keys, LCurPos) then
+        Break;
+  end;
 end;
 
 procedure TDuFrame.WMRButtonUp(var Message: TWMRButtonUp);
+var
+  I : Integer;
+  LCurPos : TPoint;
 begin
+  inherited;
+  if Self.CanFocus and not Self.Focused  then
+    Self.SetFocus;
 
+  LCurPos.X := Message.XPos;
+  LCurPos.Y := Message.YPos;
+
+  for I := 0 to ComponentCount - 1 do
+  begin
+    if Components[I] is TDuControl then
+      if TDuControl(Components[I]).OnRButtonUp(Message.Keys, LCurPos) then
+        Break;
+  end;
 end;
 
 procedure TDuFrame.WMSize(var Message: TWMSize);
+var
+  I : Integer;
 begin
-
+  inherited;
+  for I := 0 to ComponentCount - 1 do
+  begin
+    if Components[I] is TDuControl then
+     TDuControl(Components[I]).OnSizeChanged();
+  end;
 end;
 
 end.

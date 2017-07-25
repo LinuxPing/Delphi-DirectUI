@@ -26,11 +26,11 @@ public
     //区域由框架坐标系转组件坐标系
     function FrameToControlRect(const AFrameRect: TRect): TRect;
     //区域由组件坐标系转框架坐标系
-    function ControlToFrameRect(const ACompRect: TRect): TRect;
+    function ControlToFrameRect(const AControlRect: TRect): TRect;
     //坐标点由框架坐标系转组件坐标系
     function FrameToControlPoint(const AFramePoint: TPoint): TPoint;
     //坐标点由组件坐标系转框架坐标系
-    function ControlToFramePoint(const ACompPoint: TPoint): TPoint;
+    function ControlToFramePoint(const AControlPoint: TPoint): TPoint;
 
     //组件绘制
     //参数1：框架DC
@@ -70,15 +70,15 @@ implementation
 
 { TDuControl }
 
-function TDuControl.ControlToFramePoint(const ACompPoint: TPoint): TPoint;
+function TDuControl.ControlToFramePoint(const AControlPoint: TPoint): TPoint;
 begin
-  Result.X := ACompPoint.X + FLeft;
-  Result.Y := ACompPoint.Y + FTop;
+  Result.X := AControlPoint.X + FLeft;
+  Result.Y := AControlPoint.Y + FTop;
 end;
 
-function TDuControl.ControlToFrameRect(const ACompRect: TRect): TRect;
+function TDuControl.ControlToFrameRect(const AControlRect: TRect): TRect;
 begin
-  Result := ACompRect;
+  Result := AControlRect;
   OffsetRect(Result, FLeft, FTop);
 end;
 
@@ -106,68 +106,67 @@ end;
 
 procedure TDuControl.OnInnerShow;
 begin
-
 end;
 
 function TDuControl.OnKeyDown(ACharCode: Word; AKeyData: Integer): Boolean;
 begin
-
+  Result := False;
 end;
 
 function TDuControl.OnKeyUp(ACharCode: Word; AKeyData: Integer): Boolean;
 begin
-
+  Result := False;
 end;
 
 function TDuControl.OnLButtonClick(AFlags: UINT; var AMousePt: TPoint): Boolean;
 begin
-
+  Result := False;
 end;
 
 function TDuControl.OnLButtonDblClk(AFlags: UINT;
   var AMousePt: TPoint): Boolean;
 begin
-
+  Result := False;
 end;
 
 function TDuControl.OnLButtonDown(AFlags: UINT; var AMousePt: TPoint): Boolean;
 begin
-
+  Result := False;
 end;
 
 function TDuControl.OnLButtonUp(AFlags: UINT; var AMousePt: TPoint): Boolean;
 begin
-
+  Result := False;
 end;
 
 function TDuControl.OnMouseMove(AFlags: UINT; var AMousePt: TPoint): Boolean;
 begin
-
+  Result := False;
 end;
 
 function TDuControl.OnMouseWheel(AIsDown: Boolean): Boolean;
 begin
-
+  Result := False;
 end;
 
 function TDuControl.OnRButtonDown(AFlags: UINT; var AMousePt: TPoint): Boolean;
 begin
-
+  Result := False;
 end;
 
 function TDuControl.OnRButtonUp(AFlags: UINT; var AMousePt: TPoint): Boolean;
 begin
-
+  Result := False;
 end;
 
 procedure TDuControl.OnSizeChanged;
 begin
-
 end;
 
 procedure TDuControl.Paint(DC: HDC; AInvalidateRect: TRect);
 var
   LCompRect, LInvalidateRect: TRect;
+  I : Integer;
 begin
   //计算刷新区域和该组件区域是否有重叠，有则绘制组件
   if Types.IntersectRect(LInvalidateRect, Bounds, AInvalidateRect) then
@@ -184,6 +183,12 @@ begin
     PaintForeground(DC, LCompRect, LInvalidateRect);
     //绘制边框
     DrawBorder(DC, LCompRect);
+    //绘制子空间
+    for I := 0 to ComponentCount - 1 do
+    begin
+      if Components[I] is TDuControl then
+        TDuControl(Components[I]).Paint(DC, AInvalidateRect);
+    end;
   end;
 end;
 
