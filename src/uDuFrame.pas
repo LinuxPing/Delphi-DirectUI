@@ -100,7 +100,7 @@ begin
   for I := 0 to ComponentCount - 1 do
   begin
     if Components[I] is TDuControl then
-      if TDuControl(Components[I]).OnMouseMove(m_nMouseKey, LCurPos) then
+      if TDuControl(Components[I]).DoOnMouseMove(m_nMouseKey, LCurPos) then
         Break;
   end;
 end;
@@ -123,7 +123,7 @@ begin
   for I := 0 to ComponentCount - 1 do
   begin
     if Components[I] is TDuControl then
-      if TDuControl(Components[I]).OnKeyDown(Message.CharCode, KeyDataToShiftState(Message.KeyData)) then
+      if TDuControl(Components[I]).DoOnKeyDown(Message.CharCode, KeyDataToShiftState(Message.KeyData)) then
         Break;
   end;
 end;
@@ -136,7 +136,7 @@ begin
   for I := 0 to ComponentCount - 1 do
   begin
     if Components[I] is TDuControl then
-      if TDuControl(Components[I]).OnKeyUp(Message.CharCode, KeyDataToShiftState(Message.KeyData)) then
+      if TDuControl(Components[I]).DoOnKeyUp(Message.CharCode, KeyDataToShiftState(Message.KeyData)) then
         Break;
   end;
 end;
@@ -152,7 +152,7 @@ begin
   for I := 0 to ComponentCount - 1 do
   begin
     if Components[I] is TDuControl then
-      if TDuControl(Components[I]).OnLButtonDown(Message.Keys, LCurPos) then
+      if TDuControl(Components[I]).DoOnLButtonDown(Message.Keys, LCurPos) then
         Break;
   end;
 end;
@@ -172,7 +172,7 @@ begin
   for I := 0 to ComponentCount - 1 do
   begin
     if Components[I] is TDuControl then
-      if TDuControl(Components[I]).OnLButtonDown(Message.Keys, LCurPos) then
+      if TDuControl(Components[I]).DoOnLButtonDown(Message.Keys, LCurPos) then
         Break;
   end;
 end;
@@ -192,7 +192,7 @@ begin
   for I := 0 to ComponentCount - 1 do
   begin
     if Components[I] is TDuControl then
-      if TDuControl(Components[I]).OnLButtonUp(Message.Keys, LCurPos) then
+      if TDuControl(Components[I]).DoOnLButtonUp(Message.Keys, LCurPos) then
         Break;
   end;
 end;
@@ -207,8 +207,16 @@ begin
 end;
 
 procedure TDuFrame.WMMouseWheel(var Message: TWMMouseWheel);
+var
+  I : Integer;
 begin
   inherited;
+  for I := 0 to ComponentCount - 1 do
+  begin
+    if Components[I] is TDuControl then
+      if TDuControl(Components[I]).DoOnMouseWheel(Message.WheelDelta < 0) then
+        Break;
+  end;
 end;
 
 procedure TDuFrame.WMPaint(var Message: TWMPaint);
@@ -259,7 +267,7 @@ begin
   for I := 0 to ComponentCount - 1 do
   begin
     if Components[I] is TDuControl then
-      if TDuControl(Components[I]).OnRButtonDown(Message.Keys, LCurPos) then
+      if TDuControl(Components[I]).DoOnRButtonDown(Message.Keys, LCurPos) then
         Break;
   end;
 end;
@@ -279,7 +287,7 @@ begin
   for I := 0 to ComponentCount - 1 do
   begin
     if Components[I] is TDuControl then
-      if TDuControl(Components[I]).OnRButtonUp(Message.Keys, LCurPos) then
+      if TDuControl(Components[I]).DoOnRButtonUp(Message.Keys, LCurPos) then
         Break;
   end;
 end;
@@ -292,7 +300,7 @@ begin
   for I := 0 to ComponentCount - 1 do
   begin
     if Components[I] is TDuControl then
-     TDuControl(Components[I]).OnSizeChanged();
+     TDuControl(Components[I]).DoOnSizeChanged(TDuControl(Components[I]));
   end;
 end;
 
