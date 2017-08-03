@@ -5,7 +5,7 @@ uses
   ufrmMain in 'ufrmMain.pas' {frmMain},
   uDuFrame in '..\src\uDuFrame.pas',
   uDuControl in '..\src\uDuControl.pas',
-  uDuCompatiblerDC in '..\src\uDuCompatiblerDC.pas';
+  uDuCompatibleDC in '..\src\uDuCompatibleDC.pas';
 
 {$R *.res}
 

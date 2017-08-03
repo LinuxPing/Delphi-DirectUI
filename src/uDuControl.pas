@@ -2,34 +2,36 @@ unit uDuControl;
 
 interface
 
-uses Classes, Windows, Types;
+uses Classes, Windows, Types, Controls;
 
 type
 
-  //当鼠标左键按下时触发的事件(全框架响应，AMousePt在框架坐标系)
-  TOnLButtonDown = function (AFlags: UINT; var AMousePt: TPoint): Boolean of object;
-  //当鼠标左键抬起时触发的事件(全框架响应，AMousePt在框架坐标系)
-  TOnLButtonUp =function (AFlags: UINT; var AMousePt: TPoint): Boolean of object;
-  //当鼠标右键按下时触发的事件(全框架响应，AMousePt在框架坐标系)
-  TOnRButtonDown=function (AFlags: UINT; var AMousePt: TPoint): Boolean of object;
-  //当鼠标右键抬起时触发的事件(全框架响应，AMousePt在框架坐标系)
-  TOnRButtonUp=function (AFlags: UINT; var AMousePt: TPoint): Boolean of object;
-  //当鼠标移动时触发的事件(全框架响应，AMousePt在框架坐标系)
-  TOnMouseMove=function (AFlags: UINT; var AMousePt: TPoint): Boolean of object;
-  //当鼠标左键单击时触发的事件(鼠标所在的组件响应，AMousePt在框架坐标系)
-  TOnLButtonClick=function (AFlags: UINT; var AMousePt: TPoint): Boolean of object;
-  //当鼠标左键双击时触发的事件(鼠标所在的组件响应，AMousePt在框架坐标系)
-  TOnLButtonDblClk=function (AFlags: UINT; var AMousePt: TPoint): Boolean of object;
-  //当鼠标滚轮时触发的事件--有焦点才响应
-  TOnMouseWheel=function (AIsDown: Boolean): Boolean of object;
-  //按键事件
-  TOnKey= function (ACharCode: Word; Shift: TShiftState): Boolean of object;
+//当鼠标左键按下时触发的事件(全框架响应，AMousePt在框架坐标系)
+TOnLButtonDown = function (AFlags: UINT; var AMousePt: TPoint): Boolean of object;
+//当鼠标左键抬起时触发的事件(全框架响应，AMousePt在框架坐标系)
+TOnLButtonUp =function (AFlags: UINT; var AMousePt: TPoint): Boolean of object;
+//当鼠标右键按下时触发的事件(全框架响应，AMousePt在框架坐标系)
+TOnRButtonDown=function (AFlags: UINT; var AMousePt: TPoint): Boolean of object;
+//当鼠标右键抬起时触发的事件(全框架响应，AMousePt在框架坐标系)
+TOnRButtonUp=function (AFlags: UINT; var AMousePt: TPoint): Boolean of object;
+//当鼠标移动时触发的事件(全框架响应，AMousePt在框架坐标系)
+TOnMouseMove=function (AFlags: UINT; var AMousePt: TPoint): Boolean of object;
+//当鼠标左键单击时触发的事件(鼠标所在的组件响应，AMousePt在框架坐标系)
+TOnLButtonClick=function (AFlags: UINT; var AMousePt: TPoint): Boolean of object;
+//当鼠标左键双击时触发的事件(鼠标所在的组件响应，AMousePt在框架坐标系)
+TOnLButtonDblClk=function (AFlags: UINT; var AMousePt: TPoint): Boolean of object;
+//当鼠标滚轮时触发的事件--有焦点才响应
+TOnMouseWheel=function (AIsDown: Boolean): Boolean of object;
+//按键事件
+TOnKey= function (ACharCode: Word; Shift: TShiftState): Boolean of object;
 
 
 TDuControl=class(TComponent)
 private
   FLeft, FTop, FWidth, FHeight: Integer;
   FVisible: Boolean;
+  FAlign : TAlign;
+  m_Owner: TComponent;
 
   //当组件大小改变后触发的事件
   FOnSizeChanged: TNotifyEvent;
@@ -60,6 +62,13 @@ private
 
   function GetBounds: TRect;
   procedure SetVisible(const Value: Boolean);
+  procedure SetAlign(const Value: TAlign);
+  procedure SetHeight(const Value: Integer);
+  procedure SetLeft(const Value: Integer);
+  procedure SetTop(const Value: Integer);
+  procedure SetWidth(const Value: Integer);
+
+  procedure RealignChildControls;
 protected
     //绘制缓存背景
     procedure PaintBkg(DC: HDC; AControlRect, AInvalidateRect: TRect);virtual;
@@ -68,9 +77,9 @@ protected
     //绘制前景
     procedure PaintForeground(DC: HDC; AControlRect, AInvalidateRect: TRect);virtual;
     //绘制边框
-    procedure DrawBorder(DC: HDC; AControlRect: TRect);virtual;
+    procedure PaintBorder(DC: HDC; AControlRect: TRect);virtual;
 public
-    constructor Create(AOwner: TDuControl); reintroduce;
+    constructor Create(AOwner: TComponent); reintroduce;
     //区域由框架坐标系转组件坐标系
     function FrameToControlRect(const AFrameRect: TRect): TRect;
     //区域由组件坐标系转框架坐标系
@@ -140,9 +149,17 @@ published
     property OnMouseEnter:TNotifyEvent read FOnMouseEnter write FOnMouseEnter;
     //鼠标离开事件
     property OnMouseLeave: TNotifyEvent read FOnMouseLeave write FOnMouseLeave;
+
+    property Align : TAlign read FAlign write SetAlign;
+    property Left : Integer read FLeft write SetLeft;
+    property Top : Integer read FTop write SetTop;
+    property Width : Integer read FWidth write SetWidth;
+    property Height : Integer read FHeight write SetHeight;
 end;
 
 implementation
+
+uses uDuFrame, TypInfo;
 
 { TDuControl }
 
@@ -158,13 +175,15 @@ begin
   OffsetRect(Result, FLeft, FTop);
 end;
 
-constructor TDuControl.Create(AOwner: TDuControl);
+constructor TDuControl.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   FVisible := False;
+  FAlign := alNone;
+  m_Owner := AOwner;
 end;
 
-procedure TDuControl.DrawBorder(DC: HDC; AControlRect: TRect);
+procedure TDuControl.PaintBorder(DC: HDC; AControlRect: TRect);
 begin
 
 end;
@@ -199,7 +218,7 @@ begin
     if Self.Components[I] is TDuControl then
       if Assigned(TDuControl(Self.Components[I]).FOnKeyDown) then
       begin
-        Result := TDuControl(Self.Components[I]).FOnKeyDown(ACharCode, Shift);
+        Result := TDuControl(Self.Components[I]).DoOnKeyDown(ACharCode, Shift);
         if Result then Exit;
       end;
   end;
@@ -218,7 +237,7 @@ begin
     if Self.Components[I] is TDuControl then
       if Assigned(TDuControl(Self.Components[I]).FOnKeyUp) then
       begin
-        Result := TDuControl(Self.Components[I]).FOnKeyUp(ACharCode, Shift);
+        Result := TDuControl(Self.Components[I]).DoOnKeyUp(ACharCode, Shift);
         if Result then Exit;
       end;
   end;
@@ -237,7 +256,7 @@ begin
     if Self.Components[I] is TDuControl then
       if Assigned(TDuControl(Self.Components[I]).FOnLButtonClick) then
       begin
-        Result := TDuControl(Self.Components[I]).FOnLButtonClick(AFlags, AMousePt);
+        Result := TDuControl(Self.Components[I]).DoOnLButtonClick(AFlags, AMousePt);
         if Result then Exit;
       end;
   end;
@@ -257,7 +276,7 @@ begin
     if Self.Components[I] is TDuControl then
       if Assigned(TDuControl(Self.Components[I]).FOnLButtonClick) then
       begin
-        Result := TDuControl(Self.Components[I]).FOnLButtonClick(AFlags, AMousePt);
+        Result := TDuControl(Self.Components[I]).DoOnLButtonDblClk(AFlags, AMousePt);
         if Result then Exit;
       end;
   end;
@@ -276,7 +295,7 @@ begin
     if Self.Components[I] is TDuControl then
       if Assigned(TDuControl(Self.Components[I]).FOnLButtonDown) then
       begin
-        Result := TDuControl(Self.Components[I]).FOnLButtonDown(AFlags, AMousePt);
+        Result := TDuControl(Self.Components[I]).DoOnLButtonDown(AFlags, AMousePt);
         if Result then Exit;
       end;
   end;
@@ -295,7 +314,7 @@ begin
     if Self.Components[I] is TDuControl then
       if Assigned(TDuControl(Self.Components[I]).FOnLButtonUp) then
       begin
-        Result := TDuControl(Self.Components[I]).FOnLButtonUp(AFlags, AMousePt);
+        Result := TDuControl(Self.Components[I]).DoOnLButtonUp(AFlags, AMousePt);
         if Result then Exit;
       end;
   end;
@@ -324,7 +343,7 @@ begin
     if Self.Components[I] is TDuControl then
       if Assigned(TDuControl(Self.Components[I]).FOnMouseMove) then
       begin
-        Result := TDuControl(Self.Components[I]).FOnMouseMove(AFlags, AMousePt);
+        Result := TDuControl(Self.Components[I]).DoOnMouseMove(AFlags, AMousePt);
         if Result then Exit;
       end;
   end;
@@ -343,7 +362,7 @@ begin
     if Self.Components[I] is TDuControl then
       if Assigned(TDuControl(Self.Components[I]).FOnMouseWheel) then
       begin
-        Result := TDuControl(Self.Components[I]).FOnMouseWheel(AIsDown);
+        Result := TDuControl(Self.Components[I]).DoOnMouseWheel(AIsDown);
         if Result then Exit;
       end;
   end;
@@ -362,7 +381,7 @@ begin
     if Self.Components[I] is TDuControl then
       if Assigned(TDuControl(Self.Components[I]).FOnRButtonDown) then
       begin
-        Result := TDuControl(Self.Components[I]).FOnRButtonDown(AFlags, AMousePt);
+        Result := TDuControl(Self.Components[I]).DoOnRButtonDown(AFlags, AMousePt);
         if Result then Exit;
       end;
   end;
@@ -381,7 +400,7 @@ begin
     if Self.Components[I] is TDuControl then
       if Assigned(TDuControl(Self.Components[I]).FOnRButtonUp) then
       begin
-        Result := TDuControl(Self.Components[I]).FOnRButtonUp(AFlags, AMousePt);
+        Result := TDuControl(Self.Components[I]).DoOnRButtonUp(AFlags, AMousePt);
         if Result then Exit;
       end;
   end;
@@ -398,9 +417,11 @@ begin
     if Self.Components[I] is TDuControl then
       if Assigned(TDuControl(Self.Components[I]).FOnSizeChanged) then
       begin
-        TDuControl(Self.Components[I]).FOnSizeChanged(Components[I]);
+        TDuControl(Self.Components[I]).DoOnSizeChanged(Components[I]);
       end;
   end;
+
+  SetAlign(FAlign);
 end;
 
 procedure TDuControl.Paint(DC: HDC; AInvalidateRect: TRect);
@@ -424,8 +445,8 @@ begin
     //绘制前景
     PaintForeground(DC, LCompRect, LInvalidateRect);
     //绘制边框
-    DrawBorder(DC, LCompRect);
-    //绘制子空间
+    PaintBorder(DC, LCompRect);
+    //绘制子控件
     for I := 0 to ComponentCount - 1 do
     begin
       if Components[I] is TDuControl then
@@ -446,9 +467,110 @@ procedure TDuControl.PaintForeground(DC: HDC; AControlRect, AInvalidateRect: TRe
 begin
 end;
 
+procedure TDuControl.RealignChildControls;
+var
+  I : Integer;
+  LCtrl: TDuControl;
+begin
+  for I := 0 to ComponentCount - 1 do
+  begin
+    if Components[I]  is TDuControl then
+    begin
+      LCtrl :=TDuControl(Components[I]);
+      LCtrl.SetAlign(LCtrl.Align);
+    end;
+  end;
+end;
+
+procedure TDuControl.SetAlign(const Value: TAlign);
+var
+  LLeft, LTop, LWidth, LHeight: Integer;
+begin
+  FAlign := Value;
+  if not( (m_Owner is TDuControl) or (m_Owner is TDuFrame) )then Exit;
+
+  LLeft := GetPropValue(m_Owner, 'Left');
+  LTop:=  GetPropValue(m_Owner, 'Top');
+  LWidth:= GetPropValue(m_Owner, 'Width');
+  LHeight := GetPropValue(m_Owner, 'Height');
+
+  case Value of
+    alNone: ;
+    alTop:
+    begin
+      FLeft := LLeft;
+      FTop := LTop;
+      FWidth := LWidth;
+    end;
+
+    alBottom:
+    begin
+      FLeft := LLeft;
+      FTop := LTop + LHeight - FHeight;
+      FWidth := LWidth;
+    end;
+
+    alLeft:
+    begin
+      FLeft := LLeft;
+      FTop := LTop;
+      FHeight := LHeight;
+    end;
+
+    alRight:
+    begin
+      FLeft := LLeft + LWidth - FWidth;
+      FTop := LTop;
+      FHeight := LHeight;
+    end;
+
+    alClient:
+    begin
+      FLeft := LLeft;
+      FTop := LTop;
+      FWidth := LWidth;
+      FHeight := LHeight;
+    end;
+    alCustom: ;
+  end;
+
+end;
+
+procedure TDuControl.SetHeight(const Value: Integer);
+begin
+  if Value = FHeight then Exit;
+  if Align in [alClient, alLeft, alRight] then Exit;
+  FHeight := Value;
+  RealignChildControls;
+end;
+
+procedure TDuControl.SetLeft(const Value: Integer);
+begin
+  if Value = FLeft then Exit;
+  if Align in [alLeft, alTop, alBottom, alClient] then Exit;
+  FLeft := Value;
+  RealignChildControls;
+end;
+
+procedure TDuControl.SetTop(const Value: Integer);
+begin
+  if Value = FTop then Exit;
+  if Align in [alTop, alLeft, alClient] then Exit;
+  FTop := Value;
+  RealignChildControls;
+end;
+
 procedure TDuControl.SetVisible(const Value: Boolean);
 begin
   FVisible := Value;
+end;
+
+procedure TDuControl.SetWidth(const Value: Integer);
+begin
+  if Value = FWidth then Exit;
+  if Align in [alClient, alTop, alBottom] then Exit;
+  FWidth := Value;
+  RealignChildControls;
 end;
 
 end.
