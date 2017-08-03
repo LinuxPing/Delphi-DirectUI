@@ -2,12 +2,12 @@ unit uDuFrame;
 
 interface
 
-uses Classes, Controls, Windows, Messages, uDuCompatiblerDC, ExtCtrls;
+uses Classes, Controls, Windows, Messages, uDuCompatibleDC, ExtCtrls;
 
 type
 TDuFrame=class(TWinControl)
 private
-  m_MemoryDC: TDuCompatiblerDC;
+  m_MemoryDC: TDuCompatibleDC;
   m_ptMouseLast, m_ptMousePos : TPoint;
   m_nMouseKey: Integer;
 
@@ -229,7 +229,7 @@ begin
   try
     //创建内存DC
     if not Assigned(m_MemoryDC) then
-      m_MemoryDC := TDuCompatiblerDC.Create(LPs.hdc);
+      m_MemoryDC := TDuCompatibleDC.Create(LPs.hdc);
     //设置内存DC区域
     m_MemoryDC.SetBounds(LPs.hdc, GetClientRect);
 

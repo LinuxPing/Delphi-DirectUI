@@ -6,14 +6,14 @@
 //
 //=============================================================================
 
-unit uDuCompatiblerDC;
+unit uDuCompatibleDC;
 
 interface
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Dialogs,uMemCounter;
 
 type
-TDuCompatiblerDC = class(TObject)
+TDuCompatibleDC = class(TObject)
 private
   m_hMemDC: HDC;                    //内存DC
   m_rcBounds: TRect;                //绘制区域(在目标DC上的)
@@ -43,7 +43,7 @@ end;
 implementation
 
 //构造函数
-constructor TDuCompatiblerDC.Create(DC: HDC);
+constructor TDuCompatibleDC.Create(DC: HDC);
 begin
   inherited Create;
   //创建和目标DC兼容的内存DC
@@ -51,7 +51,7 @@ begin
 end;
 
 //构造函数
-constructor TDuCompatiblerDC.Create(DC: HDC; const ABoundsRect: TRect);
+constructor TDuCompatibleDC.Create(DC: HDC; const ABoundsRect: TRect);
 begin
   inherited Create;
   //创建和目标DC兼容的内存DC
@@ -65,7 +65,7 @@ begin
 end;
 
 //析构函数
-destructor TDuCompatiblerDC.Destroy;
+destructor TDuCompatibleDC.Destroy;
 begin
   if m_hMemDC <> 0 then
   begin
@@ -78,7 +78,7 @@ begin
 end;
 
 //设置绘制区域
-procedure TDuCompatiblerDC.SetBounds(DC:HDC; const ABoundsRect: TRect);
+procedure TDuCompatibleDC.SetBounds(DC:HDC; const ABoundsRect: TRect);
 begin
   //检查区域是否为空
   if IsRectEmpty(ABoundsRect) then
@@ -111,14 +111,14 @@ begin
 end;
 
 //将内存DC绘制到目标DC
-procedure TDuCompatiblerDC.Blt(DC:HDC);
+procedure TDuCompatibleDC.Blt(DC:HDC);
 begin
   BitBlt(DC, m_rcBounds.Left, m_rcBounds.Top,
     m_rcBounds.Right - m_rcBounds.Left, m_rcBounds.Bottom - m_rcBounds.Top, m_hMemDC, 0, 0, SRCCOPY);
 end;
 
 //将内存DC绘制到目标DC的指定区域上(要保证AInvalidateRect和m_rcBounds在一个坐标系上)
-procedure TDuCompatiblerDC.Blt(DC: HDC; AInvalidateRect: TRect);
+procedure TDuCompatibleDC.Blt(DC: HDC; AInvalidateRect: TRect);
 begin
   BitBlt(DC, AInvalidateRect.Left, AInvalidateRect.Top,
     AInvalidateRect.Right - AInvalidateRect.Left, AInvalidateRect.Bottom - AInvalidateRect.Top, m_hMemDC,
