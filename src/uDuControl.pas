@@ -79,7 +79,7 @@ protected
     //绘制边框
     procedure PaintBorder(DC: HDC; AControlRect: TRect);virtual;
 public
-    constructor Create(AOwner: TComponent); reintroduce;
+    constructor Create(AOwner: TComponent); override;
     //区域由框架坐标系转组件坐标系
     function FrameToControlRect(const AFrameRect: TRect): TRect;
     //区域由组件坐标系转框架坐标系
@@ -92,7 +92,7 @@ public
     //组件绘制
     //参数1：框架DC
     //参数2：刷新区域(在框架坐标系下)
-    procedure Paint(DC: HDC; AInvalidateRect: TRect); virtual;
+    procedure Paint(DC: HDC; AInvalidateRect: TRect; var ALeft, ATop: Integer);
 
     //当组件大小改变后触发的事件
     procedure DoOnSizeChanged(Sender: TObject); virtual;
@@ -117,9 +117,9 @@ public
     //当键抬起时触发的事件--有焦点才响应
     function DoOnKeyUp(ACharCode: Word; Shift: TShiftState): Boolean; virtual;
     //鼠标进入事件
-    procedure DoOnMouseEnter(Sender: TObject);
+    procedure DoOnMouseEnter(Sender: TObject);virtual;
     //鼠标离开事件
-    procedure DoOnMouseLeave(Sender: TObject);
+    procedure DoOnMouseLeave(Sender: TObject);virtual;
     //控件是否可见
     property Visible:Boolean read FVisible write SetVisible;
     property Bounds: TRect read GetBounds;
@@ -177,6 +177,7 @@ end;
 
 constructor TDuControl.Create(AOwner: TComponent);
 begin
+  Assert((AOwner is TDuFrame) or (AOwner is TDuControl),  'TDuControl''s owner MUST be TDuFrame or TDuControl''s subclass.');
   inherited Create(AOwner);
   FVisible := False;
   FAlign := alNone;
@@ -185,7 +186,6 @@ end;
 
 procedure TDuControl.PaintBorder(DC: HDC; AControlRect: TRect);
 begin
-
 end;
 
 function TDuControl.FrameToControlPoint(const AFramePoint: TPoint): TPoint;
@@ -411,6 +411,7 @@ var
   I : Integer;
 begin
   if Assigned(FOnSizeChanged) then FOnSizeChanged(Sender);
+  SetAlign(FAlign);
 
   for I := 0 to Self.ComponentCount - 1 do
   begin
@@ -420,22 +421,22 @@ begin
         TDuControl(Self.Components[I]).DoOnSizeChanged(Components[I]);
       end;
   end;
-
-  SetAlign(FAlign);
 end;
 
-procedure TDuControl.Paint(DC: HDC; AInvalidateRect: TRect);
+procedure TDuControl.Paint(DC: HDC; AInvalidateRect: TRect; var ALeft, ATop: Integer);
 var
   LCompRect, LInvalidateRect: TRect;
   I : Integer;
 begin
+  ALeft := ALeft + FLeft;
+  ATop := ATop + FTop;
   if not Visible then Exit;
 
   //计算刷新区域和该组件区域是否有重叠，有则绘制组件
   if Types.IntersectRect(LInvalidateRect, Bounds, AInvalidateRect) then
   begin
     //将设备坐标映射到当前组件坐标系
-    SetViewportOrgEx(DC, FLeft, FTop, nil);
+    SetViewportOrgEx(DC, ALeft, ATop, nil);
     LCompRect := FrameToControlRect(Bounds);
     LInvalidateRect := FrameToControlRect(LInvalidateRect);
     //绘制缓存背景
@@ -450,7 +451,7 @@ begin
     for I := 0 to ComponentCount - 1 do
     begin
       if Components[I] is TDuControl then
-        TDuControl(Components[I]).Paint(DC, AInvalidateRect);
+        TDuControl(Components[I]).Paint(DC, AInvalidateRect, ALeft, ATop);
     end;
   end;
 end;

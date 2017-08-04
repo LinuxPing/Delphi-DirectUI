@@ -224,6 +224,7 @@ var
   LControl: TDuControl;
   I: Integer;
   LPs: PAINTSTRUCT;
+  LLeft, LTop : Integer;
 begin
   BeginPaint(Handle, LPs);
   try
@@ -242,7 +243,9 @@ begin
       //不可见对象不绘制
       if not LControl.Visible then
         Continue;
-      LControl.Paint(m_MemoryDC.DC, LPs.rcPaint);
+      LLeft := 0;
+      LTop := 0;
+      LControl.Paint(m_MemoryDC.DC, LPs.rcPaint, LLeft, LTop);
     end;
   finally
     //恢复坐标系为框架坐标系
